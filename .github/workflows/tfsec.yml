@@ -1,0 +1,43 @@
+name: DevSecOps Terraform Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.tf'
+      - '.github/workflows/tfsec.yml'
+      
+jobs:
+  devsecops:
+    name: DevSecOps Checks & Deploy
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: eu-north-1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # --- tfsec: Terraform security scan ---
+      - name: Run tfsec (Terraform security scan)
+        uses: aquasecurity/tfsec-action@v1.0.0
+
+
+      # --- Terraform ---
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
